@@ -68,8 +68,10 @@ const testConnection = async () => {
     const conn = await pool.getConnection();
     console.log('✅ Connected to Aiven MySQL');
     conn.release();
+    return true;
   } catch (err) {
     console.error('❌ MySQL connect error:', err);
+    return false;
   }
 };
 
