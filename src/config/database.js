@@ -2,10 +2,28 @@ const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
 
-// If a local default CA file exists at ./certs/ca.pem, use it when
-// DB_SSL_CA is not explicitly set. This makes local dev easier.
+// Default CA path used when writing or loading a bundled CA file.
 const defaultCaPath = path.join(__dirname, '..', '..', 'certs', 'ca.pem');
-const caPath = process.env.DB_SSL_CA || (fs.existsSync(defaultCaPath) ? defaultCaPath : undefined);
+
+// Prefer explicit path from env. If not provided, support a base64
+// PEM via `DB_SSL_BASE64` (recommended for secrets) or fall back to
+// a local file when present.
+let caPath = process.env.DB_SSL_CA;
+
+// If DB_SSL_BASE64 is provided, write it to `defaultCaPath` and use it.
+if (!caPath && process.env.DB_SSL_BASE64) {
+  try {
+    const buf = Buffer.from(process.env.DB_SSL_BASE64, 'base64');
+    fs.mkdirSync(path.dirname(defaultCaPath), { recursive: true });
+    fs.writeFileSync(defaultCaPath, buf);
+    caPath = defaultCaPath;
+    console.log('✅ Wrote DB CA from DB_SSL_BASE64 to', defaultCaPath);
+  } catch (e) {
+    console.error('❌ Failed to write DB CA from DB_SSL_BASE64:', e.message);
+  }
+} else if (!caPath && fs.existsSync(defaultCaPath)) {
+  caPath = defaultCaPath;
+}
 
 // Build SSL config from environment or default file:
 // - If `caPath` present, load it as `ca` (recommended)

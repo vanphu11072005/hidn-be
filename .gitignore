@@ -52,4 +52,6 @@ temp/
 uploads/
  
 # Local certificates (should not be committed)
+# Keep CA file out of git when written from DB_SSL_BASE64 or local dev
 certs/
+certs/ca.pem
