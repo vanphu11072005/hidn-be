@@ -27,7 +27,8 @@ if (!caPath && process.env.DB_SSL_BASE64) {
 
 // Build SSL config from environment or default file:
 // - If `caPath` present, load it as `ca` (recommended)
-// - Else if `DB_ALLOW_SELF_SIGNED=true` then disable cert verification (dev only)
+// - Else if `DB_ALLOW_SELF_SIGNED=true` then disable cert verification
+// - In production without CA, allow self-signed (common for managed DB)
 // - Otherwise keep strict verification
 let sslConfig;
 if (caPath) {
@@ -38,7 +39,10 @@ if (caPath) {
     sslConfig = { rejectUnauthorized: true };
   }
 } else if (process.env.DB_ALLOW_SELF_SIGNED === 'true') {
-  console.warn('⚠️ DB_ALLOW_SELF_SIGNED=true, SSL certificate verification disabled');
+  console.warn('⚠️ DB_ALLOW_SELF_SIGNED=true, SSL verification disabled');
+  sslConfig = { rejectUnauthorized: false };
+} else if (process.env.NODE_ENV === 'production' && !caPath) {
+  console.warn('⚠️ Production mode without CA cert, allowing self-signed');
   sslConfig = { rejectUnauthorized: false };
 } else {
   sslConfig = { rejectUnauthorized: true };
