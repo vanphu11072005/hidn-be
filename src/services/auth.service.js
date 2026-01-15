@@ -9,6 +9,13 @@ const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10);
 
 const generateAccessToken = (userId) => {
   const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    const err = new Error('JWT secret is not configured');
+    err.statusCode = 500;
+    err.isOperational = true;
+    throw err;
+  }
+
   return jwt.sign({ userId }, secret, {
     expiresIn: process.env.JWT_EXPIRES_IN || '15m'
   });
@@ -17,7 +24,13 @@ const generateAccessToken = (userId) => {
 const generateRefreshToken = (userId, rememberMe = false) => {
   const refreshSecret = process.env.JWT_REFRESH_SECRET ||
     process.env.REFRESH_TOKEN_SECRET;
-  
+  if (!refreshSecret) {
+    const err = new Error('JWT refresh secret is not configured');
+    err.statusCode = 500;
+    err.isOperational = true;
+    throw err;
+  }
+
   // If remember me: 30 days, else: 1 day (session-like)
   const expiresIn = rememberMe ? '30d' : '1d';
 
@@ -68,7 +81,12 @@ exports.register = async (email, password) => {
   // Generate and send verification code
   const code = generateVerificationCode();
   await EmailVerification.create(userId, code, 10); // 10 minutes
-  await emailService.sendVerificationEmail(email, code);
+  try {
+    await emailService.sendVerificationEmail(email, code);
+  } catch (err) {
+    // Log but do not fail registration if email sending fails
+    console.error('Failed to send verification email for', email, err.message || err);
+  }
 
   return {
     userId,
