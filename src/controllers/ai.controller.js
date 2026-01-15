@@ -6,6 +6,34 @@ const walletService = WalletService;
 const toolConfigService = ToolConfigService;
 const { v4: uuidv4 } = require('uuid');
 
+// Get public tool configs (no auth required)
+exports.getPublicToolConfigs = asyncHandler(async (req, res) => {
+  try {
+    const configs = await toolConfigService.getToolConfigs();
+    
+    // Convert map to array for frontend
+    const configArray = Object.keys(configs).map(toolId => ({
+      tool_id: toolId,
+      enabled: configs[toolId].enabled,
+      cost_multiplier: configs[toolId].cost_multiplier,
+      cooldown_seconds: configs[toolId].cooldown_seconds,
+      created_at: configs[toolId].created_at,
+      updated_at: configs[toolId].updated_at
+    }));
+
+    res.json({
+      success: true,
+      data: configArray
+    });
+  } catch (error) {
+    console.error('Error fetching public tool configs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Không thể tải cấu hình công cụ'
+    });
+  }
+});
+
 // Helper to check cooldown
 async function checkCooldown(userId, toolType) {
   const cooldownSeconds = await toolConfigService.getCooldownSeconds(toolType);

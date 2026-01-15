@@ -10,7 +10,10 @@ const aiController = require('../controllers/ai.controller');
 const ocrController = require('../controllers/ocr.controller');
 const upload = require('../config/multer');
 
-// All AI routes require authentication and rate limiting
+// Public endpoint for tool configs (no auth required)
+router.get('/tools/config', aiController.getPublicToolConfigs);
+
+// All other AI routes require authentication and rate limiting
 router.use(authenticate);
 router.use(aiLimiter);
 
