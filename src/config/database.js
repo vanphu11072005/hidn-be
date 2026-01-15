@@ -79,3 +79,12 @@ module.exports = {
   pool,
   testConnection,
 };
+
+// Convenience helper used by repositories: return `rows` directly
+// so callers can work with query results or OkPacket for INSERT.
+const query = async (sql, params = []) => {
+  const [rows] = await pool.query(sql, params);
+  return rows;
+};
+
+module.exports.query = query;
